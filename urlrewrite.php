@@ -19,16 +19,16 @@ $arUrlRewrite = array(
 		"PATH" => "/desktop_app/router.php",
 	),
 	array(
-		"CONDITION" => "#^/feedback/#",
-		"RULE" => "",
-		"ID" => "custom:form",
-		"PATH" => "/feedback/index.php",
-	),
-	array(
 		"CONDITION" => "#^/products/#",
 		"RULE" => "",
 		"ID" => "bitrix:catalog",
 		"PATH" => "/products/index.php",
+	),
+	array(
+		"CONDITION" => "#^/feedback/#",
+		"RULE" => "",
+		"ID" => "custom:form",
+		"PATH" => "/feedback/index.php",
 	),
 	array(
 		"CONDITION" => "#^/brand/#",

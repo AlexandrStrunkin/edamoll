@@ -183,7 +183,7 @@
             }
         }
 
-        if (substr($_SERVER["REQUEST_URI"],0,6)=="/item/" && strlen($_SERVER["REQUEST_URI"])>7) {
+        if (substr($_SERVER["REQUEST_URI"],0,6)=="/item/" && strlen($_SERVER["REQUEST_URI"])>7) {  
             if (!strpos($_SERVER["REQUEST_URI"],"/",7)===false) {
                 $gg_str=substr($_SERVER["REQUEST_URI"],6,strpos($_SERVER["REQUEST_URI"],"/",7)-6);
                 /*
@@ -214,7 +214,7 @@
             array(
                 "IBLOCK_TYPE" => "1c_catalog",
                 "IBLOCK_ID" => "11",
-                "HIDE_NOT_AVAILABLE" => "Y",
+                "HIDE_NOT_AVAILABLE" => "N",
                 "BASKET_URL" => "",
                 "ACTION_VARIABLE" => "action",
                 "PRODUCT_ID_VARIABLE" => "id",

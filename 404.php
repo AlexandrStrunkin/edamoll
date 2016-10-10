@@ -1,4 +1,5 @@
 <? 
+include_once($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/main/include/urlrewrite.php');
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
 $APPLICATION->SetTitle("Edamoll 404 Не Найдено"); 
 CHTTP::SetStatus("404 Not Found");
