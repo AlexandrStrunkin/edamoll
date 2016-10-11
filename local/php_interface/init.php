@@ -33,154 +33,154 @@
     AddEventHandler('main', 'OnBuildGlobalMenu', 'ASDFavoriteOnBuildGlobalMenu');
     AddEventHandler("sale", "OnOrderNewSendEmail", "OnOrderNewSendEmailHendler");
 
-        function OnOrderNewSendEmailHendler($id, &$eventName, &$arFields)
+    function OnOrderNewSendEmailHendler($id, &$eventName, &$arFields)
+    {
+        ProductRating(intval($arFields["ORDER_ID"]));
+        if (CModule::IncludeModule("sale"))
         {
-            ProductRating(intval($arFields["ORDER_ID"]));
-            if (CModule::IncludeModule("sale"))
-            {
-                $id = $arFields["ORDER_ID"];
-                $arOrder = CSaleOrder::GetByID($id);
-                $arFieldsAdd = array(
-                    "ORDER_ID" => $id,
-                    "ORDER_PROPS_ID" => 13,
-                    "NAME" => "Комментарий покупателя",
-                    "CODE" => "COMMENTUSER",
-                    "VALUE" => $arOrder["USER_DESCRIPTION"]
-                );
-                CSaleOrderPropsValue::Add($arFieldsAdd);
-            }
-
-
-            $strOrderList .= '<table rules="rows" width="100%" style="border-bottom:1px solid black;margin-bottom:60px;"><thead><tr><th></th>';
-            $strOrderList .= '<th style="text-align:left;">Название</th><th>Количество/Вес</th><th>Цена за ед.</th>';
-            if (doubleval($discountPrice) > 0)  {
-                $strOrderList .= '<th>Скидка</th>';
-            }
-            $strOrderList .= '<th>Сумма</th></tr></thead><tbody>';
-            global $USER;
-            $elementsArrayList = array();
-
-            $dbBasket = CSaleBasket::GetList(
-                array("ID" => "ASC"),
-                array("ORDER_ID" => $id)
+            $id = $arFields["ORDER_ID"];
+            $arOrder = CSaleOrder::GetByID($id);
+            $arFieldsAdd = array(
+                "ORDER_ID" => $id,
+                "ORDER_PROPS_ID" => 13,
+                "NAME" => "Комментарий покупателя",
+                "CODE" => "COMMENTUSER",
+                "VALUE" => $arOrder["USER_DESCRIPTION"]
             );
-
-            while ($arBasketItems = $dbBasket->Fetch()){
-                $bigPicture = "";
-                $obItemIblock = CIBlockElement::GetByID($arBasketItems["PRODUCT_ID"]);
-                if($arItemIblock = $obItemIblock->GetNext()) {
-                    if(!empty($arItemIblock["PREVIEW_PICTURE"])) {
-                        $bigPicture = "http://".$_SERVER['SERVER_NAME'].CFile::GetPath($arItemIblock["PREVIEW_PICTURE"]);
-                    }
-                }
-                $strOrderItems = "";
-                $baseUnit = "шт";
-                $obProperty = CIBlockElement::GetProperty(
-                    11,
-                    $arBasketItems["PRODUCT_ID"],
-                    array("sort" => "asc"),
-                    array("CODE" => "CML2_BASE_UNIT")
-                );
-                if($arProperty = $obProperty->Fetch()) {
-                    if($arProperty["VALUE"]) {
-                        $baseUnit = $arProperty["VALUE"];
-                    }
-                }
-
-                $url = "http://".$_SERVER['SERVER_NAME'].$arItemIblock["DETAIL_PAGE_URL"];
-                $strOrderItems .= '<tr>';
-                if (!empty($bigPicture)) {
-                    $strOrderItems .= "<td style='text-align:center;'><a href='".$url."'><img style='max-width:75px;max-height:75px;' src='".$bigPicture."'/></a></td>";
-                } else {
-                    $strOrderItems .= "<td><a href='".$url."'><img src='http://edamoll.ru/include/img/no-photo2.png' style='max-width:75px;max-height:75px;'/></a></td>";
-                }
-                $strOrderItems .= "<td><a style='width:50px' href='".$url."'>".$arBasketItems["NAME"]."</a></td>";
-                $strOrderItems .= "<td style='text-align:center;'>".$arBasketItems["QUANTITY"]." ".$baseUnit."</td>";
-                $strOrderItems .= '<td style="text-align:center;">';
-                $fullPrice = $arBasketItems["PRICE"] + $arBasketItems["DISCOUNT_PRICE"];
-                $formatedPrice = round(100 * ($fullPrice - floor($fullPrice)));
-                if (strlen($formatedPrice) < 2) {
-                    $formatedPrice = "0".$formatedPrice;
-                }
-                $strOrderItems .= '<span>'.floor($fullPrice).'<span style="vertical-align:0.3em;font-size:70%;margin-left:4px;">'.$formatedPrice.'</span></span>';
-                $strOrderItems .= "</td>";
-                if (doubleval($discountPrice) > 0){
-                    $strOrderItems .='<td style="text-align:center;color:red">';
-                    if (intval($arBasketItems["DISCOUNT_PRICE"]) > 0)
-                    {
-                        $formatedPrice = round(100 * ($arBasketItems["QUANTITY"] * $arBasketItems["DISCOUNT_PRICE"] - floor($arBasketItems["QUANTITY"] * $arBasketItems["DISCOUNT_PRICE"])));
-                        if (strlen($formatedPrice) < 2) {
-                            $formatedPrice = "0".$formatedPrice;
-                        }
-                        $strOrderItems .= '<span>-'.floor($arBasketItems["QUANTITY"] * $arBasketItems["DISCOUNT_PRICE"]).'<span style="vertical-align:0.3em;font-size:70%;margin-left:4px;">'.
-                        $formatedPrice.'</span></span>';
-                    }
-                    $strOrderItems .='</td>';
-                }
-
-                $summm = $arBasketItems["QUANTITY"] * $arBasketItems["PRICE"];
-                $formatedPrice = round(100 * ($summm - floor($summm)));
-                if (strlen($formatedPrice) < 2) {
-                    $formatedPrice = "0".$formatedPrice;
-                }
-
-                $strOrderItems .= '<td style="text-align:right;font-weight:bold;font-size:16px;">';
-                $strOrderItems .= '<span>'.floor($summm).'<span style="vertical-align:0.3em;font-size:70%;margin-left:4px;">'.$formatedPrice.'</span></span></td>';
-                $strOrderItems .= "</tr>";
-
-                $elementsArrayList[$arBasketItems["PRODUCT_ID"]]["SECT"] = $arBasketItems["IBLOCK_SECTION_ID"];
-                $elementsArrayList[$arBasketItems["PRODUCT_ID"]]["HTML"] = $strOrderItems;
-            }
-            uasort($elementsArrayList, "sort_p");
-
-            foreach($elementsArrayList as $elementArray) {
-                $strOrderList .= $elementArray["HTML"];
-            }
-            $strOrderList .= "</tbody></table>";
-
-
-            $arOrder = CSaleOrder::GetByID($arFields["ORDER_ID"]);
-            $db_props = CSaleOrderPropsValue::GetList(array("SORT" => "ASC"),array("ORDER_ID" => $arFields["ORDER_ID"],));
-            while($arOrderProps = $db_props->Fetch()) {
-                if($arOrderProps["CODE"]){
-                    $arOrder[$arOrderProps["CODE"]] = $arOrderProps["VALUE"];
-                }
-            }
-            $strOrderInfo .= '<div><table style="float:left;"><col width="200"><tr><td style="color:#815e5e; font-size:16px">ФИО</td><td>';
-            $strOrderInfo .= $arOrder["name"];
-            $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Номер телефона</td><td>';
-            $strOrderInfo .= $arOrder["tel"];
-            $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Email</td><td>';
-            $strOrderInfo .= $arOrder["email"];
-            $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Адрес доставки</td><td>';
-            $strOrderInfo .= $arOrder["adres"];
-            $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Дата доставки</td><td>';
-            $strOrderInfo .= $arOrder["delivery_date"];
-            $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Оплата банковской картой во время доставки</td><td>';
-            if(!empty($arOrder["card_payment"])) {
-                $strOrderInfo .= 'Да';    
-            } else {
-                $strOrderInfo .= 'Нет';            
-            };
-            $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Комментарий к заказу</td><td>';
-            $strOrderInfo .= $arOrder["COMMENTUSER"];
-            $strOrderInfo .= '</td></tr></table>';
-            $strOrderInfo .= '<div style="float:right; width:350px; font-size:16px"><div style="float:left; width:200px"><b>СУММА ЗАКАЗА:</b></div><div style="float:right"><b>';
-            $strOrderInfo .= $arOrder["PRICE"];
-            $strOrderInfo .= '</b></div><div style="float:left; width:200px; height:45px; border-bottom: 1px solid black"><b>СТОИМОСТЬ ДОСТАВКИ:</b></div><div style="float:right; width:150px; height:45px; border-bottom:1px solid black; text-align:right;"><b>';
-            if(!empty($arOrder["PRICE_DELIVERY"])){
-                $strOrderInfo .= $arOrder["PRICE_DELIVERY"];    
-            } else {
-                $strOrderInfo .='<span style="color:red">БЕСПЛАТНО</span>'; 
-            };
-            $strOrderInfo .= '</b></div><div style="float:left; width:200px"><b>ОБЩАЯ СТОИМОСТЬ:</b></div><div style="float:right"><b>';
-            $strOrderInfo .= $arOrder["PRICE"] + $arOrder["PRICE_DELIVERY"];
-            $strOrderInfo .= '</b></div></div>';
-
-            $arFields["PRICE"] = $strOrderInfo;
-            $arFields["ORDER_LIST"] = $strOrderList;
-            return $arFields;
+            CSaleOrderPropsValue::Add($arFieldsAdd);
         }
+
+
+        $strOrderList .= '<table rules="rows" width="100%" style="border-bottom:1px solid black;margin-bottom:60px;"><thead><tr><th></th>';
+        $strOrderList .= '<th style="text-align:left;">Название</th><th>Количество/Вес</th><th>Цена за ед.</th>';
+        if (doubleval($discountPrice) > 0)  {
+            $strOrderList .= '<th>Скидка</th>';
+        }
+        $strOrderList .= '<th>Сумма</th></tr></thead><tbody>';
+        global $USER;
+        $elementsArrayList = array();
+
+        $dbBasket = CSaleBasket::GetList(
+            array("ID" => "ASC"),
+            array("ORDER_ID" => $id)
+        );
+
+        while ($arBasketItems = $dbBasket->Fetch()){
+            $bigPicture = "";
+            $obItemIblock = CIBlockElement::GetByID($arBasketItems["PRODUCT_ID"]);
+            if($arItemIblock = $obItemIblock->GetNext()) {
+                if(!empty($arItemIblock["PREVIEW_PICTURE"])) {
+                    $bigPicture = "http://".$_SERVER['SERVER_NAME'].CFile::GetPath($arItemIblock["PREVIEW_PICTURE"]);
+                }
+            }
+            $strOrderItems = "";
+            $baseUnit = "шт";
+            $obProperty = CIBlockElement::GetProperty(
+                11,
+                $arBasketItems["PRODUCT_ID"],
+                array("sort" => "asc"),
+                array("CODE" => "CML2_BASE_UNIT")
+            );
+            if($arProperty = $obProperty->Fetch()) {
+                if($arProperty["VALUE"]) {
+                    $baseUnit = $arProperty["VALUE"];
+                }
+            }
+
+            $url = "http://".$_SERVER['SERVER_NAME'].$arItemIblock["DETAIL_PAGE_URL"];
+            $strOrderItems .= '<tr>';
+            if (!empty($bigPicture)) {
+                $strOrderItems .= "<td style='text-align:center;'><a href='".$url."'><img style='max-width:75px;max-height:75px;' src='".$bigPicture."'/></a></td>";
+            } else {
+                $strOrderItems .= "<td><a href='".$url."'><img src='http://edamoll.ru/include/img/no-photo2.png' style='max-width:75px;max-height:75px;'/></a></td>";
+            }
+            $strOrderItems .= "<td><a style='width:50px' href='".$url."'>".$arBasketItems["NAME"]."</a></td>";
+            $strOrderItems .= "<td style='text-align:center;'>".$arBasketItems["QUANTITY"]." ".$baseUnit."</td>";
+            $strOrderItems .= '<td style="text-align:center;">';
+            $fullPrice = $arBasketItems["PRICE"] + $arBasketItems["DISCOUNT_PRICE"];
+            $formatedPrice = round(100 * ($fullPrice - floor($fullPrice)));
+            if (strlen($formatedPrice) < 2) {
+                $formatedPrice = "0".$formatedPrice;
+            }
+            $strOrderItems .= '<span>'.floor($fullPrice).'<span style="vertical-align:0.3em;font-size:70%;margin-left:4px;">'.$formatedPrice.'</span></span>';
+            $strOrderItems .= "</td>";
+            if (doubleval($discountPrice) > 0){
+                $strOrderItems .='<td style="text-align:center;color:red">';
+                if (intval($arBasketItems["DISCOUNT_PRICE"]) > 0)
+                {
+                    $formatedPrice = round(100 * ($arBasketItems["QUANTITY"] * $arBasketItems["DISCOUNT_PRICE"] - floor($arBasketItems["QUANTITY"] * $arBasketItems["DISCOUNT_PRICE"])));
+                    if (strlen($formatedPrice) < 2) {
+                        $formatedPrice = "0".$formatedPrice;
+                    }
+                    $strOrderItems .= '<span>-'.floor($arBasketItems["QUANTITY"] * $arBasketItems["DISCOUNT_PRICE"]).'<span style="vertical-align:0.3em;font-size:70%;margin-left:4px;">'.
+                    $formatedPrice.'</span></span>';
+                }
+                $strOrderItems .='</td>';
+            }
+
+            $summm = $arBasketItems["QUANTITY"] * $arBasketItems["PRICE"];
+            $formatedPrice = round(100 * ($summm - floor($summm)));
+            if (strlen($formatedPrice) < 2) {
+                $formatedPrice = "0".$formatedPrice;
+            }
+
+            $strOrderItems .= '<td style="text-align:right;font-weight:bold;font-size:16px;">';
+            $strOrderItems .= '<span>'.floor($summm).'<span style="vertical-align:0.3em;font-size:70%;margin-left:4px;">'.$formatedPrice.'</span></span></td>';
+            $strOrderItems .= "</tr>";
+
+            $elementsArrayList[$arBasketItems["PRODUCT_ID"]]["SECT"] = $arBasketItems["IBLOCK_SECTION_ID"];
+            $elementsArrayList[$arBasketItems["PRODUCT_ID"]]["HTML"] = $strOrderItems;
+        }
+        uasort($elementsArrayList, "sort_p");
+
+        foreach($elementsArrayList as $elementArray) {
+            $strOrderList .= $elementArray["HTML"];
+        }
+        $strOrderList .= "</tbody></table>";
+
+
+        $arOrder = CSaleOrder::GetByID($arFields["ORDER_ID"]);
+        $db_props = CSaleOrderPropsValue::GetList(array("SORT" => "ASC"),array("ORDER_ID" => $arFields["ORDER_ID"],));
+        while($arOrderProps = $db_props->Fetch()) {
+            if($arOrderProps["CODE"]){
+                $arOrder[$arOrderProps["CODE"]] = $arOrderProps["VALUE"];
+            }
+        }
+        $strOrderInfo .= '<div><table style="float:left;"><col width="200"><tr><td style="color:#815e5e; font-size:16px">ФИО</td><td>';
+        $strOrderInfo .= $arOrder["name"];
+        $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Номер телефона</td><td>';
+        $strOrderInfo .= $arOrder["tel"];
+        $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Email</td><td>';
+        $strOrderInfo .= $arOrder["email"];
+        $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Адрес доставки</td><td>';
+        $strOrderInfo .= $arOrder["adres"];
+        $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Дата доставки</td><td>';
+        $strOrderInfo .= $arOrder["delivery_date"];
+        $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Оплата банковской картой во время доставки</td><td>';
+        if(!empty($arOrder["card_payment"])) {
+            $strOrderInfo .= 'Да';    
+        } else {
+            $strOrderInfo .= 'Нет';            
+        };
+        $strOrderInfo .= '</td></tr><tr><td style="color:#815e5e; font-size:16px">Комментарий к заказу</td><td>';
+        $strOrderInfo .= $arOrder["COMMENTUSER"];
+        $strOrderInfo .= '</td></tr></table>';
+        $strOrderInfo .= '<div style="float:right; width:350px; font-size:16px"><div style="float:left; width:200px"><b>СУММА ЗАКАЗА:</b></div><div style="float:right"><b>';
+        $strOrderInfo .= $arOrder["PRICE"];
+        $strOrderInfo .= '</b></div><div style="float:left; width:200px; height:45px; border-bottom: 1px solid black"><b>СТОИМОСТЬ ДОСТАВКИ:</b></div><div style="float:right; width:150px; height:45px; border-bottom:1px solid black; text-align:right;"><b>';
+        if(!empty($arOrder["PRICE_DELIVERY"])){
+            $strOrderInfo .= $arOrder["PRICE_DELIVERY"];    
+        } else {
+            $strOrderInfo .='<span style="color:red">БЕСПЛАТНО</span>'; 
+        };
+        $strOrderInfo .= '</b></div><div style="float:left; width:200px"><b>ОБЩАЯ СТОИМОСТЬ:</b></div><div style="float:right"><b>';
+        $strOrderInfo .= $arOrder["PRICE"] + $arOrder["PRICE_DELIVERY"];
+        $strOrderInfo .= '</b></div></div>';
+
+        $arFields["PRICE"] = $strOrderInfo;
+        $arFields["ORDER_LIST"] = $strOrderList;
+        return $arFields;
+    }
 
     function ASDFavoriteOnBuildGlobalMenu(&$aGlobalMenu, &$aModuleMenu)
     {
